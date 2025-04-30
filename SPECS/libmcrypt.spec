@@ -3,6 +3,14 @@
 %define pkg_name  %{ns_prefix}-%{pkg_base}
 %define _prefix   /opt/cpanel/%{pkg_base}
 
+%if 0%{?rhel} >= 10
+# As rpm evolves and is causing us difficulties.
+# According to the name it removes la files, I do not care why it is called, but it should
+# never be called.  We deliver la files in the devel packaages.
+# https://docs.fedoraproject.org/en-US/packaging-guidelines/#_brp_buildroot_policy_scripts
+%global __brp_remove_la_files %{nil}
+%endif
+
 Summary:   libmcrypt is a data encryption library.
 Name:      %{pkg_name}
 Version:   2.5.8
@@ -34,6 +42,11 @@ Header file and static libraries of libmcrypt data encryption library.
 %setup -n %{pkg_base}-%{version}
 
 %build
+
+%if 0%{?rhel} >= 10
+export CFLAGS="-Wno-implicit-function-declaration -Wno-error=int-conversion -Wno-error=implicit-int $CFLAGS"
+%endif
+
 ./configure \
     --prefix=%{_prefix} \
     --libdir=%{_libdir} \
@@ -49,9 +62,12 @@ make DESTDIR=$RPM_BUILD_ROOT install
 
 mkdir -p ${RPM_BUILD_ROOT}/%{_docdir}
 
+%if 0%{?rhel} >= 10
+chmod 0644 %{buildroot}%{_libdir}/libmcrypt.la
+%endif
+
 %check
 make check
-
 %clean
 rm -rf ${RPM_BUILD_ROOT}
 
